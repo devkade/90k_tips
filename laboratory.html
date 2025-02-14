@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9만에이커 - 실험실</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <h1><a href="index.html" style="text-decoration: none; color: inherit;">9만에이커</a></h1>
+    </header>
+
+    <main class="main-content">
+    <div class="tile-container">
+        <script src="data/dataset.js"></script>
+        <script>
+            const researchTypes = [
+                '병사', '정책', '장비', '병사', '정책', '장비',
+                '병사', '정책', '장비', '병사', '정책', '장비',
+                '병사', '정책', '장비', '병사', '전용', '정책',
+                '장비', '전용'
+            ];
+
+            // 각 타일의 선택된 아이템을 저장할 배열
+            const tileSelections = new Array(researchTypes.length).fill(null);
+
+            const tileContainer = document.querySelector('.tile-container');
+            for (let i = 0; i < researchTypes.length; i += 2) {
+                const row = document.createElement('div');
+                row.className = 'tile-row';
+
+                for (let j = 0; j < 2; j++) {
+                    if (i + j >= researchTypes.length) break;
+
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.innerHTML = `
+                        <div class="tile-content" data-tile-index="${i + j}">
+                            <div class="tile-image"></div>
+                            <div class="tile-text">
+                                <div class="research-type">${researchTypes[i + j]}</div>
+                                <div class="research-status available" data-index="${i + j}">연구 가능</div>
+                            </div>
+                        </div>
+                    `;
+                    tile.onclick = () => showPopup(i + j);
+                    row.appendChild(tile);
+                }
+
+                tileContainer.appendChild(row);
+
+                if (i + 2 < researchTypes.length) {
+                    const dashedLine = document.createElement('div');
+                    dashedLine.className = 'tile-dashed';
+                    tileContainer.appendChild(dashedLine);
+                }
+            }
+        </script>
+    </div>
+</main>
+
+    <div class="popup-overlay" id="popup">
+        <div class="popup-content">            
+            <div class="popup-title">연구 선택:</div>
+            
+            <div class="selected-items">
+                <div class="selected-image" data-choice="0"></div>
+                <div class="selected-image" data-choice="1"></div>
+                <div class="selected-image" data-choice="2"></div>
+    
+                <button class="reset-button">초기화</button>
+            </div>
+    
+            <div class="research-status-text">현재 연구 가능:</div>
+    
+            <div class="available-items">
+                <script>
+                    const availableItems = document.querySelector('.available-items');
+                    for (let i = 0; i < 18; i++) {
+                        const item = document.createElement('div');
+                        item.className = 'available-item';
+                        item.setAttribute('data-item-id', i);
+                        availableItems.appendChild(item);
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="guide.html" class="nav-item">공략</a>
+        <a href="simulation.html" class="nav-item">시뮬레이션</a>
+        <a href="community.html" class="nav-item">커뮤니티</a>
+        <a href="about.html" class="nav-item">소개</a>
+    </nav>
+
+    <script>
+        let currentTileIndex = -1;
+        let currentChoices = [];
+
+        function showPopup(index) {
+            currentTileIndex = index;
+            const popup = document.getElementById('popup');
+            popup.style.display = 'block';
+            
+            const tileLevel = index + 1;
+            const researchType = researchTypes[index];
+            
+            let availableItems = researchData[researchType].filter(item => item.minLevel <= tileLevel);
+            
+            if (researchType === '장비') {
+                const isSpecial = researchTypes[index] === '전용';
+                availableItems = availableItems.filter(item => 
+                    isSpecial ? item.type === '전용' : item.type === '장비'
+                );
+            }
+            
+            updateAvailableItems(availableItems);
+        }
+
+        function updateAvailableItems(items) {
+            const container = document.querySelector('.available-items');
+            container.innerHTML = '';
+            
+            items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'available-item';
+                itemElement.style.backgroundImage = `url(${item.imageUrl})`;
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.innerHTML = `
+                    <h3>${item.name}</h3>
+                    <p>${item.description}</p>
+                `;
+                
+                itemElement.appendChild(tooltip);
+                itemElement.addEventListener('click', () => selectItem(item));
+                
+                container.appendChild(itemElement);
+            });
+        }
+
+        function selectItem(item) {
+            const tileContent = document.querySelector(`[data-tile-index="${currentTileIndex}"]`);
+            const tileImage = tileContent.querySelector('.tile-image');
+            
+            // 이미지 크기와 스타일 설정
+            tileImage.style.width = '50px';
+            tileImage.style.height = '50px';
+            tileImage.style.backgroundImage = `url(${item.imageUrl})`;
+            tileImage.style.display = 'block';
+            
+            closePopup();
+        }
+
+        function closePopup() {
+            const popup = document.getElementById('popup');
+            popup.style.display = 'none';
+            currentTileIndex = -1;
+        }
+
+        document.querySelector('.popup-overlay').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePopup();
+            }
+        });
+    </script>
+</body>
+</html>
